@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Paginated product list",
+  "type": "object",
+  "required": ["current_page", "last_page", "per_page", "total", "data"],
+  "properties": {
+    "current_page": { "type": "integer", "minimum": 1 },
+    "last_page": { "type": "integer", "minimum": 1 },
+    "per_page": { "type": "integer", "minimum": 1 },
+    "total": { "type": "integer", "minimum": 0 },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "price", "in_stock", "category", "brand"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "price": { "type": "number" },
+          "in_stock": { "type": "boolean" },
+          "is_rental": { "type": "boolean" },
+          "category": {
+            "type": "object",
+            "required": ["id", "name"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "slug": { "type": "string" }
+            }
+          },
+          "brand": {
+            "type": "object",
+            "required": ["id", "name"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
