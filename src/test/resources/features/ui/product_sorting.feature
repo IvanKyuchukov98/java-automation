@@ -11,9 +11,13 @@ Feature: Product sorting
     When the user sorts products by "<option>"
     Then the products are sorted by price <direction>
 
-    Examples:
+    @smoke
+    Examples: Smoke
       | option             | direction  |
       | Price (Low - High) | ascending  |
+
+    Examples: Regression
+      | option             | direction  |
       | Price (High - Low) | descending |
 
   Scenario Outline: Sort products by name "<option>"

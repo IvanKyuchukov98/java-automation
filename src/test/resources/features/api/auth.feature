@@ -7,7 +7,8 @@ Feature: Authentication API
     Then the response status code is 200
     And a bearer access token is returned
 
-  Scenario: Login is rejected with a wrong password
-    When the client logs in with email "customer@practicesoftwaretesting.com" and password "wrong-password"
+  # Uses an unknown email on purpose: repeated wrong passwords lock real accounts.
+  Scenario: Login is rejected for unknown credentials
+    When the client logs in with email "unknown.user@example.com" and password "wrong-password"
     Then the response status code is 401
     And the error message is "Unauthorized"

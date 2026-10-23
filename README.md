@@ -38,6 +38,8 @@ built with **Java 21, Cucumber, JUnit 5, Selenide and RestAssured**, with **Allu
 - **Stable locators.** Page objects use the app's `data-test` attributes.
 - **Isolated scenarios.** Every UI scenario gets a fresh browser; shared step state lives in
   per-scenario PicoContainer objects, never in static fields.
+- **Negative login tests use unknown emails.** The site locks an account after repeated
+  wrong passwords, so negative tests never target the shared demo accounts.
 - **Fresh API requests.** Each API call builds a new request spec, so headers and bodies
   can't leak between calls.
 
@@ -66,10 +68,11 @@ src/test/resources/
 Requires JDK 21+, Maven 3.9+ and Chrome.
 
 ```bash
-mvn clean test                                   # everything
+mvn clean test                                   # full regression suite
+mvn clean test -Psmoke                           # smoke suite (critical path only)
 mvn clean test -Dcucumber.filter.tags="@api"     # API only
 mvn clean test -Dcucumber.filter.tags="@ui"      # UI only
-mvn clean test -Dcucumber.filter.tags="@smoke"   # smoke set
+mvn clean test -Dcucumber.filter.tags="@smoke and @ui"   # any tag expression
 mvn clean test -Dbrowser.headless=true           # no visible browser
 ```
 
@@ -89,5 +92,5 @@ A plain Cucumber HTML report is also written to `target/cucumber-report.html`.
 | Tag | Meaning |
 |---|---|
 | `@ui` / `@api` | Test layer |
-| `@smoke` | Fast, critical-path checks |
+| `@smoke` | One critical-path check per feature area (8 scenarios). For outlines, only the `Smoke` examples block is tagged. |
 | `@login`, `@search`, `@sorting`, `@product`, `@cart`, `@checkout`, `@auth`, `@products` | Feature area |

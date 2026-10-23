@@ -7,15 +7,18 @@ Feature: Product search
   Background:
     Given the user is on the home page
 
-  @smoke
   Scenario Outline: Search returns only matching products for "<term>"
     When the user searches for "<term>"
     Then the search caption shows "<term>"
     And every product shown contains "<term>" in its name
 
-    Examples:
+    @smoke
+    Examples: Smoke
       | term   |
       | pliers |
+
+    Examples: Regression
+      | term   |
       | hammer |
       | saw    |
 

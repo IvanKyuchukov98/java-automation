@@ -11,6 +11,7 @@ Feature: Shopping cart
     Then the cart contains the product with quantity 1
     And the line total is 1 times the unit price
 
+  @smoke
   Scenario: Changing the quantity updates the totals
     When the user changes the quantity to 4
     Then the line total is 4 times the unit price

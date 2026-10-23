@@ -13,6 +13,7 @@ Feature: Customer login
     Then the "My account" page is displayed
     And the customer name is shown in the navigation menu
 
-  Scenario: Customer cannot log in with a wrong password
-    When the user logs in with email "customer@practicesoftwaretesting.com" and password "wrong-password"
+  # Uses an unknown email on purpose: repeated wrong passwords lock real accounts.
+  Scenario: Login is rejected for unknown credentials
+    When the user logs in with email "unknown.user@example.com" and password "wrong-password"
     Then the login error "Invalid email or password" is displayed
