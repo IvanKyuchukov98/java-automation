@@ -1,9 +1,13 @@
 # Java Automation Framework
 
+[![Tests](https://github.com/IvanKyuchukov98/java-automation/actions/workflows/tests.yml/badge.svg)](https://github.com/IvanKyuchukov98/java-automation/actions/workflows/tests.yml)
+[![Allure report](https://img.shields.io/badge/report-Allure-orange)](https://ivankyuchukov98.github.io/java-automation/)
+![Java 21](https://img.shields.io/badge/Java-21-blue)
+
 UI and API test automation for the [Practice Software Testing "Toolshop"](https://practicesoftwaretesting.com) demo shop,
 built with **Java 21, Cucumber, JUnit 5, Selenide and RestAssured**, with **Allure** reports.
 
-> Work in progress. More features, CI and a published report are coming.
+**[View the latest test report](https://ivankyuchukov98.github.io/java-automation/)**
 
 ## Tech stack
 
@@ -17,6 +21,7 @@ built with **Java 21, Cucumber, JUnit 5, Selenide and RestAssured**, with **Allu
 | Assertions | AssertJ |
 | Dependency injection | PicoContainer (per-scenario state) |
 | Reports | Allure, Cucumber HTML |
+| CI | GitHub Actions, GitHub Pages |
 
 ## What is tested
 
@@ -78,6 +83,18 @@ mvn clean test -Dbrowser.headless=true           # no visible browser
 
 Any value in `config.properties` can be overridden with `-Dkey=value` or an environment variable
 (`ui.base.url` → `UI_BASE_URL`).
+
+## Continuous integration
+
+GitHub Actions ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) runs the tests headless on Ubuntu:
+
+| Trigger | Suite | Browsers |
+|---|---|---|
+| Nightly (03:00 UTC) | Full regression | Chrome, Firefox, Edge in parallel jobs |
+| Manual (*Run workflow* button) | Choose smoke or regression | Choose one browser or all |
+
+Each run writes a pass/fail summary to the run page and publishes the Allure report for every browser
+to GitHub Pages. Failure screenshots are attached to the run as downloadable artifacts.
 
 ## Reports
 
