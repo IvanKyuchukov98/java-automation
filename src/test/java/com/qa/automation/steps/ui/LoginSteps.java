@@ -1,6 +1,7 @@
 package com.qa.automation.steps.ui;
 
 import com.qa.automation.config.Config;
+import com.qa.automation.ui.components.Header;
 import com.qa.automation.ui.pages.AccountPage;
 import com.qa.automation.ui.pages.LoginPage;
 import io.cucumber.java.en.Given;
@@ -15,10 +16,18 @@ public class LoginSteps {
 
     private final LoginPage loginPage = new LoginPage();
     private final AccountPage accountPage = new AccountPage();
+    private final Header header = new Header();
 
     @Given("the user is on the login page")
     public void openLoginPage() {
         loginPage.open();
+    }
+
+    @Given("the customer is logged in")
+    public void customerIsLoggedIn() {
+        loginPage.open();
+        loginWithValidCredentials();
+        pageIsDisplayed("My account");
     }
 
     @When("the user logs in with valid customer credentials")
@@ -38,7 +47,7 @@ public class LoginSteps {
 
     @Then("the customer name is shown in the navigation menu")
     public void customerNameIsShown() {
-        accountPage.userMenu().shouldHave(text(Config.get("customer.name")));
+        header.userMenu().shouldHave(text(Config.get("customer.name")));
     }
 
     @Then("the login error {string} is displayed")

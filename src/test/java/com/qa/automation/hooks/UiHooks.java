@@ -21,6 +21,8 @@ public class UiHooks {
         Configuration.headless = Config.getBoolean("browser.headless");
         Configuration.browserSize = Config.get("browser.size");
         Configuration.timeout = Config.getLong("timeout.ms");
+        Configuration.reportsFolder = "target/selenide-reports";
+        Configuration.downloadsFolder = "target/downloads";
 
         SelenideLogger.addListener("AllureSelenide", new AllureSelenide()
                 .screenshots(true)

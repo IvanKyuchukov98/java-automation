@@ -18,6 +18,29 @@ built with **Java 21, Cucumber, JUnit 5, Selenide and RestAssured**, with **Allu
 | Dependency injection | PicoContainer (per-scenario state) |
 | Reports | Allure, Cucumber HTML |
 
+## What is tested
+
+| Layer | Feature | Scenarios |
+|---|---|---|
+| UI | Login | Valid login, wrong password |
+| UI | Product search | Matching results (outline), no-results message |
+| UI | Product sorting | Price and name, ascending and descending (outlines) |
+| UI | Product details | Details match the list, add to cart updates the badge |
+| UI | Shopping cart | Contents, quantity change updates totals, remove item |
+| UI + API | Checkout | Logged-in checkout with cash on delivery and credit card; the address auto-fill is verified against the postcode lookup API |
+| API | Authentication | Token issued, 401 on wrong password |
+| API | Products | Pagination, JSON schema, data rules |
+
+## Design notes
+
+- **No fixed sleeps.** Waits use Selenide conditions and the app's own loading-state
+  attributes (e.g. `search_completed`).
+- **Stable locators.** Page objects use the app's `data-test` attributes.
+- **Isolated scenarios.** Every UI scenario gets a fresh browser; shared step state lives in
+  per-scenario PicoContainer objects, never in static fields.
+- **Fresh API requests.** Each API call builds a new request spec, so headers and bodies
+  can't leak between calls.
+
 ## Project structure
 
 ```
@@ -29,7 +52,9 @@ src/test/java/com/qa/automation/
 ├── hooks/          Browser start/stop, failure screenshots
 ├── runner/         JUnit 5 Cucumber suite
 ├── steps/          Step definitions (api/, ui/)
-└── ui/pages/       Page objects
+├── ui/components/  Shared page parts (header)
+├── ui/pages/       Page objects
+└── utils/          Helpers (price parsing)
 src/test/resources/
 ├── features/       Gherkin features (api/, ui/)
 ├── schemas/        JSON schemas
@@ -65,4 +90,4 @@ A plain Cucumber HTML report is also written to `target/cucumber-report.html`.
 |---|---|
 | `@ui` / `@api` | Test layer |
 | `@smoke` | Fast, critical-path checks |
-| `@login`, `@auth`, `@products` | Feature area |
+| `@login`, `@search`, `@sorting`, `@product`, `@cart`, `@checkout`, `@auth`, `@products` | Feature area |
