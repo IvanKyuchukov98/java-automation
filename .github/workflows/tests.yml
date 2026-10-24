@@ -84,6 +84,18 @@ jobs:
         if: matrix.browser == 'edge'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
+      # Edge's first launch on a fresh runner stalls for minutes (one-time setup); every session started
+      # meanwhile waits too and times out. Launch it once here so the tests start with Edge already set up.
+      - name: Warm up Edge
+        if: matrix.browser == 'edge'
+        env:
+          UI_BASE_URL: ${{ steps.toolshop.outputs.ui-url }}
+        run: |
+          start=$(date +%s)
+          timeout 600 microsoft-edge --headless=new --disable-gpu --no-first-run \
+            --virtual-time-budget=30000 --dump-dom "$UI_BASE_URL" > /dev/null || echo "Edge warm-up did not finish"
+          echo "Edge first launch took $(( $(date +%s) - start ))s"
+
       - name: Run tests
         env:
           UI_BASE_URL: ${{ steps.toolshop.outputs.ui-url }}
