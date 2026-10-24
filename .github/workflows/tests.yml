@@ -78,6 +78,12 @@ jobs:
         id: toolshop
         uses: IvanKyuchukov98/toolshop-environment@v1
 
+      # Ubuntu 24.04 blocks the unprivileged user namespaces Chromium's sandbox needs unless the
+      # browser has an AppArmor profile; Edge has none on the runner and exits at startup.
+      - name: Allow the Edge sandbox
+        if: matrix.browser == 'edge'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Run tests
         env:
           UI_BASE_URL: ${{ steps.toolshop.outputs.ui-url }}
