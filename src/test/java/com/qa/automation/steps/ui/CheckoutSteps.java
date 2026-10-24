@@ -6,6 +6,7 @@ import com.qa.automation.ui.pages.CheckoutPage;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
+import java.time.Duration;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
@@ -36,13 +37,17 @@ public class CheckoutSteps {
         this.countryCode = checkoutPage.enterAddressLookupFields(country, postcode, houseNumber);
         this.postcode = postcode;
         this.houseNumber = houseNumber;
+
+        // The checkout wizard can load the saved profile a second time and wipe what was typed.
+        // If the lookup hasn't filled the street shortly after, enter the fields once more.
+        if (!checkoutPage.street().has(exactValue(expectedLookup().street()), Duration.ofSeconds(5))) {
+            checkoutPage.enterAddressLookupFields(country, postcode, houseNumber);
+        }
     }
 
     @Then("street, city and state are filled in from the postcode lookup API")
     public void addressIsFilledFromLookup() {
-        PostcodeLookup expected = postcodeClient.lookup(countryCode, postcode, houseNumber)
-                .then().statusCode(200)
-                .extract().as(PostcodeLookup.class);
+        PostcodeLookup expected = expectedLookup();
 
         checkoutPage.street().shouldHave(exactValue(expected.street()));
         checkoutPage.city().shouldHave(exactValue(expected.city()));
@@ -88,5 +93,11 @@ public class CheckoutSteps {
         Map<String, String> resolved = new LinkedHashMap<>();
         details.forEach((field, value) -> resolved.put(field, value.replace("{future-expiry}", futureExpiry)));
         return resolved;
+    }
+
+    private PostcodeLookup expectedLookup() {
+        return postcodeClient.lookup(countryCode, postcode, houseNumber)
+                .then().statusCode(200)
+                .extract().as(PostcodeLookup.class);
     }
 }

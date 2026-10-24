@@ -27,6 +27,13 @@
         <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
         <allure-maven.version>2.18.0</allure-maven.version>
         <allure-commandline.version>2.46.1</allure-commandline.version>
+        <cucumber-reporting.version>5.11.0</cucumber-reporting.version>
+
+        <!-- Shown in the Cucumber report header; CI overrides them with -D. -->
+        <report.browser>chrome</report.browser>
+        <report.suite>regression</report.suite>
+        <report.environment>practicesoftwaretesting.com</report.environment>
+        <report.build>local</report.build>
     </properties>
 
     <dependencyManagement>
@@ -142,6 +149,9 @@
         <!-- Narrowed suite: one critical-path check per feature area. Usage: mvn test -Psmoke -->
         <profile>
             <id>smoke</id>
+            <properties>
+                <report.suite>smoke</report.suite>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -183,6 +193,28 @@
                 <configuration>
                     <reportVersion>${allure-commandline.version}</reportVersion>
                     <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
+                </configuration>
+            </plugin>
+            <!-- Cucumber dashboard from target/cucumber.json.
+                 Usage: mvn net.masterthought:maven-cucumber-reporting:generate -->
+            <plugin>
+                <groupId>net.masterthought</groupId>
+                <artifactId>maven-cucumber-reporting</artifactId>
+                <version>${cucumber-reporting.version}</version>
+                <configuration>
+                    <projectName>Toolshop Test Automation</projectName>
+                    <buildNumber>${report.build}</buildNumber>
+                    <inputDirectory>${project.build.directory}</inputDirectory>
+                    <jsonFiles>
+                        <param>cucumber.json</param>
+                    </jsonFiles>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <classifications>
+                        <Browser>${report.browser}</Browser>
+                        <Suite>${report.suite}</Suite>
+                        <Environment>${report.environment}</Environment>
+                    </classifications>
+                    <checkBuildResult>false</checkBuildResult>
                 </configuration>
             </plugin>
         </plugins>

@@ -105,19 +105,28 @@ jobs:
             echo "| $((tests - skipped)) | $((tests - skipped - failures - errors)) | $failures | $errors |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Build Allure report
+      - name: Build reports
         if: always()
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          mvn -B -ntp allure:report
-          # Nest the report under the browser name so all artifacts merge into one site.
-          mkdir -p "report/$BROWSER"
-          cp -r target/site/allure-maven-plugin/. "report/$BROWSER/"
+          mvn -B -ntp net.masterthought:maven-cucumber-reporting:generate allure:report \
+            -Dreport.browser="$BROWSER" -Dreport.suite="$SUITE" \
+            -Dreport.environment="Toolshop 2.5 (Docker)" -Dreport.build="$RUN_NUMBER"
 
-      - name: Upload Allure report
+          # Per browser: the Cucumber report is the main page, Allure sits under allure/.
+          # Nesting under the browser name lets all artifacts merge into one site.
+          out="report/$BROWSER"
+          mkdir -p "$out/allure"
+          cp -r target/cucumber-html-reports/. "$out/"
+          cp -r target/site/allure-maven-plugin/. "$out/allure/"
+          echo '<meta http-equiv="refresh" content="0; url=overview-features.html">' > "$out/index.html"
+
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: allure-report-${{ matrix.browser }}
+          name: reports-${{ matrix.browser }}
           path: report
           if-no-files-found: ignore
           retention-days: 14
@@ -145,7 +154,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: allure-report-*
+          pattern: reports-*
           merge-multiple: true
           path: site
 
@@ -159,7 +168,7 @@ jobs:
           links=""
           for dir in site/*/; do
             browser="$(basename "$dir")"
-            links="$links<li><a href=\"$browser/\">$browser</a></li>"
+            links="$links<li><a href=\"$browser/\">$browser</a> <span class=\"meta\">(<a href=\"$browser/allure/\">Allure details</a>)</span></li>"
           done
           [ -n "$links" ] || links="<li>No reports were produced by this run.</li>"
           cat > site/index.html <<EOF
@@ -176,7 +185,7 @@ jobs:
             </style>
           </head>
           <body>
-            <h1>Allure test reports</h1>
+            <h1>Test reports</h1>
             <p class="meta">Suite: <strong>$SUITE</strong> &middot; commit <code>${SHA:0:7}</code> &middot; <a href="$RUN_URL">workflow run</a> &middot; $(date -u '+%Y-%m-%d %H:%M UTC')</p>
             <ul>$links</ul>
           </body>

@@ -1,11 +1,11 @@
 # Java Automation Framework
 
 [![Tests](https://github.com/IvanKyuchukov98/java-automation/actions/workflows/tests.yml/badge.svg)](https://github.com/IvanKyuchukov98/java-automation/actions/workflows/tests.yml)
-[![Allure report](https://img.shields.io/badge/report-Allure-orange)](https://ivankyuchukov98.github.io/java-automation/)
+[![Test report](https://img.shields.io/badge/report-Cucumber-brightgreen)](https://ivankyuchukov98.github.io/java-automation/)
 ![Java 21](https://img.shields.io/badge/Java-21-blue)
 
 UI and API test automation for the [Practice Software Testing "Toolshop"](https://practicesoftwaretesting.com) demo shop,
-built with **Java 21, Cucumber, JUnit 5, Selenide and RestAssured**, with **Allure** reports.
+built with **Java 21, Cucumber, JUnit 5, Selenide and RestAssured**, with **Cucumber** and **Allure** reports.
 
 **[View the latest test report](https://ivankyuchukov98.github.io/java-automation/)**
 
@@ -20,7 +20,7 @@ built with **Java 21, Cucumber, JUnit 5, Selenide and RestAssured**, with **Allu
 | API | RestAssured 5, Jackson, JSON Schema validation |
 | Assertions | AssertJ |
 | Dependency injection | PicoContainer (per-scenario state) |
-| Reports | Allure, Cucumber HTML |
+| Reports | Cucumber Reports (Masterthought), Allure |
 | CI | GitHub Actions, GitHub Pages |
 
 ## What is tested
@@ -106,16 +106,20 @@ Every run starts from a clean database.
 | Nightly (03:00 UTC) | Full regression | Chrome, Firefox, Edge in parallel jobs |
 | Manual (*Run workflow* button) | Choose smoke or regression | Choose one browser or all |
 
-Each run writes a pass/fail summary to the run page and publishes the Allure report for every browser
+Each run writes a pass/fail summary to the run page and publishes the Cucumber and Allure reports for every browser
 to GitHub Pages. Failure screenshots are attached to the run as downloadable artifacts.
 
 ## Reports
 
+Run the tests first, then:
+
 ```bash
-mvn allure:serve       # build and open the Allure report
+mvn net.masterthought:maven-cucumber-reporting:generate   # Cucumber dashboard: target/cucumber-html-reports/overview-features.html
+mvn allure:serve                                          # detailed Allure report (steps, API calls, screenshots)
 ```
 
-A plain Cucumber HTML report is also written to `target/cucumber-report.html`.
+The Cucumber report shows pass/fail per feature, tag and step, with failure screenshots.
+A plain single-page Cucumber HTML report is also written to `target/cucumber-report.html`.
 
 ## Tags
 

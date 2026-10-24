@@ -3,7 +3,9 @@ package com.qa.automation.ui.pages;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
+import org.openqa.selenium.Keys;
 
+import static com.codeborne.selenide.Condition.exactValue;
 import static com.codeborne.selenide.Condition.text;
 import static com.codeborne.selenide.Selectors.byAttribute;
 import static com.codeborne.selenide.Selectors.withText;
@@ -28,10 +30,16 @@ public class CartPage {
         return productTitles;
     }
 
+    /**
+     * Waits until Angular has bound the current quantity (ngModel writes it a tick after the row renders),
+     * then types over it. Clearing first is avoided: WebDriver's clear() fires a change event, which makes
+     * the cart send a second, racing update for an empty (= 1) quantity.
+     */
     public void setQuantity(String productName, int quantity) {
-        row(productName).$(byAttribute("data-test", "product-quantity"))
-                .setValue(String.valueOf(quantity))
-                .pressTab();
+        SelenideElement input = row(productName).$(byAttribute("data-test", "product-quantity"))
+                .shouldNotHave(exactValue(""));
+        String backspaces = Keys.BACK_SPACE.toString().repeat(input.getValue().length());
+        input.sendKeys(Keys.END + backspaces + quantity, Keys.TAB);
     }
 
     public SelenideElement quantityOf(String productName) {
