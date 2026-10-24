@@ -14,7 +14,7 @@ for run_dir in $(find "$site/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\n
   for browser_dir in "$site/runs/$run_dir"/*/; do
     [ -d "$browser_dir" ] || continue
     browser="$(basename "$browser_dir")"
-    RAN="" FAILED=""
+    RAN="" FAILED="" ELAPSED=""
     if [ -f "$browser_dir/run.env" ]; then
       # shellcheck disable=SC1091 # written by this workflow's test job
       source "$browser_dir/run.env"
@@ -29,7 +29,10 @@ for run_dir in $(find "$site/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\n
     fi
     browsers="$browsers<span class=\"browser $status\"><a href=\"runs/$run_dir/$browser/\">$browser</a>"
     [ -n "$result" ] && browsers="$browsers <span class=\"count\">$result</span>"
-    browsers="$browsers <a class=\"allure\" href=\"runs/$run_dir/$browser/allure/\">Allure</a></span>"
+    if [ -n "$ELAPSED" ] && [ -f "$browser_dir/timings.html" ]; then
+      browsers="$browsers <a class=\"extra\" href=\"runs/$run_dir/$browser/timings.html\" title=\"Scenario timings\">${ELAPSED}s</a>"
+    fi
+    browsers="$browsers <a class=\"extra\" href=\"runs/$run_dir/$browser/allure/\">Allure</a></span>"
   done
 
   [ -n "$browsers" ] || continue
@@ -73,16 +76,16 @@ cat > "$site/index.html" <<EOF
     .browser.passed { background: var(--pass-bg); border-color: var(--pass); }
     .browser.failed { background: var(--fail-bg); border-color: var(--fail); }
     .count { color: var(--muted); font-size: .85rem; }
-    .allure { font-size: .8rem; }
+    .extra { font-size: .8rem; }
   </style>
 </head>
 <body>
   <h1>Test reports</h1>
   <p>Last runs of the <a href="$repo_url">java-automation</a> suite, newest first.
-     Each browser opens its Cucumber report; "Allure" opens the detailed report.</p>
+     Each browser opens its Cucumber report; the time opens the scenario timings; "Allure" opens the detailed report.</p>
   <div class="table">
     <table>
-      <thead><tr><th>Run</th><th>Date</th><th>Suite</th><th>Commit</th><th>Browsers (passed / run)</th></tr></thead>
+      <thead><tr><th>Run</th><th>Date</th><th>Suite</th><th>Commit</th><th>Browsers (passed / run, execution time)</th></tr></thead>
       <tbody>$rows</tbody>
     </table>
   </div>

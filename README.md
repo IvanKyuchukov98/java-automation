@@ -59,6 +59,7 @@ src/test/java/com/qa/automation/
 ├── config/         Config loader (-D property > env var > config.properties)
 ├── context/        Per-scenario shared state
 ├── hooks/          Browser start/stop, failure screenshots
+├── reporting/      Custom Cucumber plugin: scenario timings
 ├── runner/         JUnit 5 Cucumber suite
 ├── steps/          Step definitions (api/, ui/)
 ├── ui/components/  Shared page parts (header)
@@ -127,6 +128,19 @@ mvn allure:serve                                          # detailed Allure repo
 
 The Cucumber report shows pass/fail per feature, tag and step, with failure screenshots.
 A plain single-page Cucumber HTML report is also written to `target/cucumber-report.html`.
+
+**Scenario timings.** A custom Cucumber plugin (`ScenarioTimingsPlugin`) records how long every scenario really
+takes, Background and hooks included, and writes `target/scenario-timings.html`: all scenarios slowest first,
+plus the elapsed execution time, the sum of scenario times and the parallel speed-up. It also prints a summary
+at the end of each run:
+
+```
+Execution time: 13.9s elapsed, 47.1s summed over 20 scenarios
+Slowest scenarios:
+      6.9s  Checkout > Pay with a credit card
+      5.4s  Checkout > Pay with cash on delivery
+      ...
+```
 
 ## Tags
 

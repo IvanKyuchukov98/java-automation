@@ -116,15 +116,18 @@ jobs:
             tests=$(attr tests); failures=$(attr failures); errors=$(attr errors); skipped=$(attr skipped)
           fi
           ran=$((tests - skipped)); failed=$((failures + errors))
+          # Written by ScenarioTimingsPlugin.
+          elapsed=$(jq -r '.elapsedSeconds' target/scenario-timings.json 2>/dev/null || echo "")
           {
             echo "### $SUITE on $BROWSER"
-            echo "| Run | Passed | Failed |"
-            echo "|---|---|---|"
-            echo "| $ran | $((ran - failed)) | $failed |"
+            echo "| Run | Passed | Failed | Execution time |"
+            echo "|---|---|---|---|"
+            echo "| $ran | $((ran - failed)) | $failed | ${elapsed:+${elapsed}s} |"
           } >> "$GITHUB_STEP_SUMMARY"
           # Kept for the report history page.
           echo "RAN=$ran" >> "$GITHUB_ENV"
           echo "FAILED=$failed" >> "$GITHUB_ENV"
+          echo "ELAPSED=$elapsed" >> "$GITHUB_ENV"
 
       - name: Build reports
         if: always()
@@ -144,6 +147,7 @@ jobs:
           cp -r target/cucumber-html-reports/. "$out/"
           cp -r target/site/allure-maven-plugin/. "$out/allure/"
           echo '<meta http-equiv="refresh" content="0; url=overview-features.html">' > "$out/index.html"
+          cp target/scenario-timings.html "$out/timings.html" 2>/dev/null || true
 
           # Run details for the report history page (.github/scripts/build-report-index.sh).
           {
@@ -154,6 +158,7 @@ jobs:
             printf 'DATE=%q\n' "$(date -u '+%Y-%m-%d %H:%M UTC')"
             printf 'RAN=%q\n' "${RAN:-0}"
             printf 'FAILED=%q\n' "${FAILED:-0}"
+            printf 'ELAPSED=%q\n' "${ELAPSED:-}"
           } > "$out/run.env"
 
       - name: Upload reports
@@ -226,7 +231,7 @@ jobs:
               [ -d "$dir" ] || continue
               browser="$(basename "$dir")"
               base="${PAGE_URL}runs/$RUN_NUMBER/$browser/"
-              echo "- **$browser:** [Cucumber report]($base) · [Allure details](${base}allure/)"
+              echo "- **$browser:** [Cucumber report]($base) · [Scenario timings](${base}timings.html) · [Allure details](${base}allure/)"
             done
             echo "- [Report history (last 10 runs)](${PAGE_URL})"
           } >> "$GITHUB_STEP_SUMMARY"
