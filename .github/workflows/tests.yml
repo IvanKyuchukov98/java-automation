@@ -73,7 +73,15 @@ jobs:
           java-version: "21"
           cache: maven
 
+      # The public site blocks CI browsers with a Cloudflare check, so test a local copy instead.
+      - name: Start the Toolshop
+        id: toolshop
+        uses: IvanKyuchukov98/toolshop-environment@v1
+
       - name: Run tests
+        env:
+          UI_BASE_URL: ${{ steps.toolshop.outputs.ui-url }}
+          API_BASE_URL: ${{ steps.toolshop.outputs.api-url }}
         run: |
           profile=""
           if [ "$SUITE" = smoke ]; then profile="-Psmoke"; fi
@@ -99,14 +107,18 @@ jobs:
 
       - name: Build Allure report
         if: always()
-        run: mvn -B -ntp allure:report
+        run: |
+          mvn -B -ntp allure:report
+          # Nest the report under the browser name so all artifacts merge into one site.
+          mkdir -p "report/$BROWSER"
+          cp -r target/site/allure-maven-plugin/. "report/$BROWSER/"
 
       - name: Upload Allure report
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: allure-report-${{ matrix.browser }}
-          path: target/site/allure-maven-plugin
+          path: report
           if-no-files-found: ignore
           retention-days: 14
 
@@ -134,7 +146,8 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           pattern: allure-report-*
-          path: downloaded
+          merge-multiple: true
+          path: site
 
       - name: Assemble site
         env:
@@ -144,12 +157,11 @@ jobs:
         run: |
           mkdir -p site
           links=""
-          for dir in downloaded/allure-report-*; do
-            [ -d "$dir" ] || continue
-            browser="${dir#downloaded/allure-report-}"
-            mv "$dir" "site/$browser"
+          for dir in site/*/; do
+            browser="$(basename "$dir")"
             links="$links<li><a href=\"$browser/\">$browser</a></li>"
           done
+          [ -n "$links" ] || links="<li>No reports were produced by this run.</li>"
           cat > site/index.html <<EOF
           <!doctype html>
           <html lang="en">

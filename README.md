@@ -84,9 +84,22 @@ mvn clean test -Dbrowser.headless=true           # no visible browser
 Any value in `config.properties` can be overridden with `-Dkey=value` or an environment variable
 (`ui.base.url` → `UI_BASE_URL`).
 
+### Against a local copy of the Toolshop (Docker)
+
+Start the shop with [toolshop-environment](https://github.com/IvanKyuchukov98/toolshop-environment), then:
+
+```bash
+mvn clean test -Dui.base.url=http://localhost:4200 -Dapi.base.url=http://localhost:8091
+```
+
 ## Continuous integration
 
-GitHub Actions ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) runs the tests headless on Ubuntu:
+GitHub Actions ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) runs the tests headless on Ubuntu.
+
+The public site is behind a Cloudflare bot check that blocks browsers running in CI, so each job starts its
+own copy of the Toolshop with [toolshop-environment](https://github.com/IvanKyuchukov98/toolshop-environment)
+(the shop's published Docker images plus demo data) and points the tests at `localhost`.
+Every run starts from a clean database.
 
 | Trigger | Suite | Browsers |
 |---|---|---|
