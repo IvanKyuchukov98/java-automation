@@ -200,3 +200,16 @@ jobs:
 
       - id: deploy
         uses: actions/deploy-pages@v5
+
+      - name: Link the reports in the run summary
+        env:
+          PAGE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          {
+            echo "### Test reports"
+            for dir in site/*/; do
+              browser="$(basename "$dir")"
+              echo "- **$browser:** [Cucumber report](${PAGE_URL}$browser/) · [Allure details](${PAGE_URL}$browser/allure/)"
+            done
+            echo "- [All reports](${PAGE_URL})"
+          } >> "$GITHUB_STEP_SUMMARY"
