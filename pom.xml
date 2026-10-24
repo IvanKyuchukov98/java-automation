@@ -34,6 +34,10 @@
         <report.suite>regression</report.suite>
         <report.environment>practicesoftwaretesting.com</report.environment>
         <report.build>local</report.build>
+        <report.execution>sequential</report.execution>
+
+        <!-- Scenarios run at once with -Pparallel; override with -Dthreads=N. -->
+        <threads>4</threads>
     </properties>
 
     <dependencyManagement>
@@ -166,6 +170,30 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- Runs scenarios in parallel, each with its own browser. Usage: mvn test -Pparallel [-Dthreads=4] -->
+        <profile>
+            <id>parallel</id>
+            <properties>
+                <report.execution>parallel, ${threads} threads</report.execution>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <cucumber.execution.parallel.enabled>true</cucumber.execution.parallel.enabled>
+                                <cucumber.execution.parallel.config.strategy>fixed</cucumber.execution.parallel.config.strategy>
+                                <cucumber.execution.parallel.config.fixed.parallelism>${threads}</cucumber.execution.parallel.config.fixed.parallelism>
+                                <cucumber.execution.parallel.config.fixed.max-pool-size>${threads}</cucumber.execution.parallel.config.fixed.max-pool-size>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
@@ -213,6 +241,7 @@
                         <Browser>${report.browser}</Browser>
                         <Suite>${report.suite}</Suite>
                         <Environment>${report.environment}</Environment>
+                        <Execution>${report.execution}</Execution>
                     </classifications>
                     <checkBuildResult>false</checkBuildResult>
                 </configuration>

@@ -43,6 +43,8 @@ built with **Java 21, Cucumber, JUnit 5, Selenide and RestAssured**, with **Cucu
 - **Stable locators.** Page objects use the app's `data-test` attributes.
 - **Isolated scenarios.** Every UI scenario gets a fresh browser; shared step state lives in
   per-scenario PicoContainer objects, never in static fields.
+- **Parallel-safe.** Because of that isolation, scenarios can run in parallel (`-Pparallel`), each thread with
+  its own browser. The full suite drops from about 40s to about 17s on Chrome with 4 threads.
 - **Negative login tests use unknown emails.** The site locks an account after repeated
   wrong passwords, so negative tests never target the shared demo accounts.
 - **Fresh API requests.** Each API call builds a new request spec, so headers and bodies
@@ -75,6 +77,9 @@ Requires JDK 21+, Maven 3.9+ and Chrome.
 ```bash
 mvn clean test                                   # full regression suite
 mvn clean test -Psmoke                           # smoke suite (critical path only)
+mvn clean test -Pparallel                        # scenarios in parallel, 4 at a time (-Dthreads=N to change)
+mvn clean test -Pparallel,smoke                  # profiles combine
+mvn clean test -Dbrowser=firefox                 # chrome (default), firefox or edge
 mvn clean test -Dcucumber.filter.tags="@api"     # API only
 mvn clean test -Dcucumber.filter.tags="@ui"      # UI only
 mvn clean test -Dcucumber.filter.tags="@smoke and @ui"   # any tag expression
@@ -105,6 +110,8 @@ Every run starts from a clean database.
 |---|---|---|
 | Nightly (03:00 UTC) | Full regression | Chrome, Firefox, Edge in parallel jobs |
 | Manual (*Run workflow* button) | Choose smoke or regression | Choose one browser or all |
+
+Inside each browser job, scenarios run in parallel (4 threads, `-Pparallel`).
 
 Each run writes a pass/fail summary to the run page and publishes the Cucumber and Allure reports for every browser
 to GitHub Pages. The [report page](https://ivankyuchukov98.github.io/java-automation/) keeps the last 10 runs. Failure screenshots are attached to the run as downloadable artifacts.

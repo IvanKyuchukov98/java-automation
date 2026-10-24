@@ -89,9 +89,9 @@ jobs:
           UI_BASE_URL: ${{ steps.toolshop.outputs.ui-url }}
           API_BASE_URL: ${{ steps.toolshop.outputs.api-url }}
         run: |
-          profile=""
-          if [ "$SUITE" = smoke ]; then profile="-Psmoke"; fi
-          mvn -B -ntp clean test $profile -Dbrowser="$BROWSER"
+          profiles="-Pparallel" # scenarios run in parallel, each with its own browser
+          if [ "$SUITE" = smoke ]; then profiles="$profiles,smoke"; fi
+          mvn -B -ntp clean test "$profiles" -Dbrowser="$BROWSER"
 
       - name: Test summary
         if: always()
@@ -121,7 +121,7 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           SHA: ${{ github.sha }}
         run: |
-          mvn -B -ntp net.masterthought:maven-cucumber-reporting:generate allure:report \
+          mvn -B -ntp net.masterthought:maven-cucumber-reporting:generate allure:report -Pparallel \
             -Dreport.browser="$BROWSER" -Dreport.suite="$SUITE" \
             -Dreport.environment="Toolshop 2.5 (Docker)" -Dreport.build="$RUN_NUMBER"
 
