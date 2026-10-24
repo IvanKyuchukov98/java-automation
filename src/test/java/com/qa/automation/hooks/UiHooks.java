@@ -20,6 +20,7 @@ public class UiHooks {
         Configuration.browser = Config.get("browser");
         Configuration.headless = Config.getBoolean("browser.headless");
         Configuration.browserSize = Config.get("browser.size");
+        Configuration.pageLoadStrategy = Config.get("browser.page.load.strategy");
         Configuration.timeout = Config.getLong("timeout.ms");
         Configuration.reportsFolder = "target/selenide-reports";
         Configuration.downloadsFolder = "target/downloads";
