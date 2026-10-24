@@ -92,23 +92,28 @@ jobs:
         run: |
           shopt -s nullglob
           files=(target/surefire-reports/TEST-*.xml)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No test results found." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+          tests=0; failures=0; errors=0; skipped=0
+          if [ ${#files[@]} -gt 0 ]; then
+            attr() { grep -ho "$1=\"[0-9]*\"" "${files[@]}" | head -1 | grep -o '[0-9]*'; }
+            tests=$(attr tests); failures=$(attr failures); errors=$(attr errors); skipped=$(attr skipped)
           fi
-          attr() { grep -ho "$1=\"[0-9]*\"" "${files[@]}" | head -1 | grep -o '[0-9]*'; }
-          tests=$(attr tests); failures=$(attr failures); errors=$(attr errors); skipped=$(attr skipped)
+          ran=$((tests - skipped)); failed=$((failures + errors))
           {
             echo "### $SUITE on $BROWSER"
-            echo "| Run | Passed | Failed | Errors |"
-            echo "|---|---|---|---|"
-            echo "| $((tests - skipped)) | $((tests - skipped - failures - errors)) | $failures | $errors |"
+            echo "| Run | Passed | Failed |"
+            echo "|---|---|---|"
+            echo "| $ran | $((ran - failed)) | $failed |"
           } >> "$GITHUB_STEP_SUMMARY"
+          # Kept for the report history page.
+          echo "RAN=$ran" >> "$GITHUB_ENV"
+          echo "FAILED=$failed" >> "$GITHUB_ENV"
 
       - name: Build reports
         if: always()
         env:
           RUN_NUMBER: ${{ github.run_number }}
+          RUN_ID: ${{ github.run_id }}
+          SHA: ${{ github.sha }}
         run: |
           mvn -B -ntp net.masterthought:maven-cucumber-reporting:generate allure:report \
             -Dreport.browser="$BROWSER" -Dreport.suite="$SUITE" \
@@ -122,6 +127,17 @@ jobs:
           cp -r target/site/allure-maven-plugin/. "$out/allure/"
           echo '<meta http-equiv="refresh" content="0; url=overview-features.html">' > "$out/index.html"
 
+          # Run details for the report history page (.github/scripts/build-report-index.sh).
+          {
+            printf 'RUN_NUMBER=%q\n' "$RUN_NUMBER"
+            printf 'RUN_ID=%q\n' "$RUN_ID"
+            printf 'SUITE=%q\n' "$SUITE"
+            printf 'SHA=%q\n' "$SHA"
+            printf 'DATE=%q\n' "$(date -u '+%Y-%m-%d %H:%M UTC')"
+            printf 'RAN=%q\n' "${RAN:-0}"
+            printf 'FAILED=%q\n' "${FAILED:-0}"
+          } > "$out/run.env"
+
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -129,7 +145,7 @@ jobs:
           name: reports-${{ matrix.browser }}
           path: report
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 30 # the report history page republishes the last 10 runs from these
 
       - name: Upload failure screenshots
         if: failure()
@@ -146,51 +162,31 @@ jobs:
     if: always() && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
+      actions: read # download report artifacts of earlier runs
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/scripts
+
+      - name: Download this run's reports
+        uses: actions/download-artifact@v8
         with:
           pattern: reports-*
           merge-multiple: true
-          path: site
+          path: site/runs/${{ github.run_number }}
 
-      - name: Assemble site
-        env:
-          SUITE: ${{ needs.plan.outputs.suite }}
-          SHA: ${{ github.sha }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          mkdir -p site
-          links=""
-          for dir in site/*/; do
-            browser="$(basename "$dir")"
-            links="$links<li><a href=\"$browser/\">$browser</a> <span class=\"meta\">(<a href=\"$browser/allure/\">Allure details</a>)</span></li>"
-          done
-          [ -n "$links" ] || links="<li>No reports were produced by this run.</li>"
-          cat > site/index.html <<EOF
-          <!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Test Reports</title>
-            <style>
-              body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem; color: #1f2328; background: #fff; }
-              a { color: #0969da; } li { margin: .4rem 0; font-size: 1.1rem; }
-              .meta { color: #59636e; }
-            </style>
-          </head>
-          <body>
-            <h1>Test reports</h1>
-            <p class="meta">Suite: <strong>$SUITE</strong> &middot; commit <code>${SHA:0:7}</code> &middot; <a href="$RUN_URL">workflow run</a> &middot; $(date -u '+%Y-%m-%d %H:%M UTC')</p>
-            <ul>$links</ul>
-          </body>
-          </html>
-          EOF
+      - name: Download earlier runs' reports
+        run: bash .github/scripts/fetch-previous-reports.sh site/runs 10
+
+      - name: Build the report history page
+        run: bash .github/scripts/build-report-index.sh site
 
       - uses: actions/configure-pages@v6
 
@@ -204,12 +200,15 @@ jobs:
       - name: Link the reports in the run summary
         env:
           PAGE_URL: ${{ steps.deploy.outputs.page_url }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           {
             echo "### Test reports"
-            for dir in site/*/; do
+            for dir in "site/runs/$RUN_NUMBER"/*/; do
+              [ -d "$dir" ] || continue
               browser="$(basename "$dir")"
-              echo "- **$browser:** [Cucumber report](${PAGE_URL}$browser/) · [Allure details](${PAGE_URL}$browser/allure/)"
+              base="${PAGE_URL}runs/$RUN_NUMBER/$browser/"
+              echo "- **$browser:** [Cucumber report]($base) · [Allure details](${base}allure/)"
             done
-            echo "- [All reports](${PAGE_URL})"
+            echo "- [Report history (last 10 runs)](${PAGE_URL})"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -107,7 +107,7 @@ Every run starts from a clean database.
 | Manual (*Run workflow* button) | Choose smoke or regression | Choose one browser or all |
 
 Each run writes a pass/fail summary to the run page and publishes the Cucumber and Allure reports for every browser
-to GitHub Pages. Failure screenshots are attached to the run as downloadable artifacts.
+to GitHub Pages. The [report page](https://ivankyuchukov98.github.io/java-automation/) keeps the last 10 runs. Failure screenshots are attached to the run as downloadable artifacts.
 
 ## Reports
 
